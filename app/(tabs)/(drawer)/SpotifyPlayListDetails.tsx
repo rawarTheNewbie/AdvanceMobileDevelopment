@@ -1,16 +1,16 @@
 // app/(tabs)/(drawer)/PlaylistDetail.tsx
-import { AntDesign, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import {
-    FlatList,
-    Image,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    View,
+  FlatList,
+  Image,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 type CoverSrc = string | number;
@@ -75,8 +75,8 @@ export default function PlaylistDetail() {
       {/* Top bar */}
       <View style={styles.topBar}>
         <Pressable onPress={() => router.back()} style={styles.iconBtn}>
-          <AntDesign name="arrowleft" size={20} color="#fff" />
-        </Pressable>
+          <Ionicons name="arrow-back" size={30} color="#fff" />
+        </Pressable>          
         <Pressable onPress={() => {}} style={styles.iconBtn}>
           <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
         </Pressable>
@@ -127,6 +127,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#121212" },
 
   topBar: {
+    paddingTop: 70,
     height: 44,
     paddingHorizontal: 12,
     flexDirection: "row",
@@ -137,7 +138,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.08)",
     alignItems: "center",
     justifyContent: "center",
   },

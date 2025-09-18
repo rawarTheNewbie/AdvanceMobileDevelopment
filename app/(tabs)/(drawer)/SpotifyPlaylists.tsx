@@ -1,22 +1,22 @@
-// app/(drawer)/SpotifyPlaylists.tsx
-import { AntDesign, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { DrawerActions } from "@react-navigation/native";
+// app/(tabs)/(drawer)/SpotifyPlaylists.tsx
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { DrawerActions, useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useNavigation } from "expo-router";
+import { router } from "expo-router";
 import React from "react";
 import {
   FlatList,
   Image,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-type Playlist = { id: string; title: string; cover: string };
+type Playlist = { id: string; title: string; cover: string | any };
 type Mix = { id: string; title: string; artists: string; cover: string };
 
 const MOCK_PLAYLISTS: Playlist[] = [
@@ -41,10 +41,9 @@ const MOCK_PLAYLISTS: Playlist[] = [
   {
     id: "4",
     title: "Chill Vibes",
-    cover: require("@/assets/images/Parokya.jpg"), 
+    // ✅ local asset (require returns a number), don't wrap with { uri: ... }
+    cover: require("@/assets/images/Parokya.jpg"),
   },
-
-  // add more if you want the grid to be fuller
 ];
 
 const MIXES: Mix[] = [
@@ -76,9 +75,18 @@ const MIXES: Mix[] = [
 
 const CHIPS = ["Music", "Podcasts & Shows", "Audiobooks"];
 
+// helper to render both local and remote images
+const imgSource = (src: string | any) =>
+  typeof src === "string" ? { uri: src } : src;
+
 export default function SpotifyPlaylists() {
   const navigation = useNavigation();
-  const openDrawer = () => navigation.dispatch(DrawerActions.openDrawer());
+
+  const openDrawer = () => {
+    const parent: any = (navigation as any).getParent?.();
+    if (parent?.openDrawer) parent.openDrawer();
+    else navigation.dispatch(DrawerActions.openDrawer());
+  };
 
   const handleOpenPlaylist = (p: Playlist | Mix) =>
     router.push({
@@ -89,16 +97,17 @@ export default function SpotifyPlaylists() {
   return (
     <SafeAreaView style={styles.safe}>
       <LinearGradient
-        colors={["#252525ff", "rgba(14, 14, 14, 1)"]}
+        colors={["rgba(14, 14, 14, 1)", "#252525ff"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity style={styles.drawerBtn} onPress={openDrawer} activeOpacity={0.8}>
-            <AntDesign name="menuunfold" size={30} color="#fff" />
-          </TouchableOpacity>            
+        <TouchableOpacity style={styles.drawerBtn} onPress={openDrawer} activeOpacity={0.8}>
+          <MaterialCommunityIcons name="menu" size={30} color="#fff" />
+        </TouchableOpacity>
+
         <View style={styles.headerRow}>
           <Text style={styles.greeting}>Good afternoon</Text>
 
@@ -125,11 +134,12 @@ export default function SpotifyPlaylists() {
           ))}
         </View>
 
-        {/* Grid of small playlist tiles (uses your MOCK_PLAYLISTS) */}
+        {/* Grid of small tiles */}
         <View style={styles.grid}>
           {MOCK_PLAYLISTS.map((p) => (
             <Pressable key={p.id} style={styles.tile} onPress={() => handleOpenPlaylist(p)}>
-              <Image source={{ uri: p.cover }} style={styles.tileCover} />
+              {/* ✅ handle local vs remote */}
+              <Image source={imgSource(p.cover)} style={styles.tileCover} />
               <View style={styles.tileRight}>
                 <Text numberOfLines={1} style={styles.tileTitle}>
                   {p.title}
@@ -155,6 +165,7 @@ export default function SpotifyPlaylists() {
           contentContainerStyle={{ paddingRight: 16 }}
           renderItem={({ item }) => (
             <Pressable style={styles.card} onPress={() => handleOpenPlaylist(item)}>
+              {/* ✅ item.cover is a string URL, so { uri: ... } is correct */}
               <Image source={{ uri: item.cover }} style={styles.cardCover} />
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {item.title}
@@ -204,17 +215,17 @@ const styles = StyleSheet.create({
   greeting: { color: "#fff", fontSize: 27, fontWeight: "600" },
   headerIcons: { flexDirection: "row", alignItems: "center", paddingTop: 5 },
   drawerBtn: {
-    width:  45,
+    width: 45,
     height: 45,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
-    paddingTop: 25,
+    paddingTop: 20,
     paddingLeft: 16,
   },
 
   iconBtn: {
-    width:  45,
+    width: 45,
     height: 45,
     alignItems: "center",
     justifyContent: "center",
@@ -308,7 +319,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   npCover: { width: 60, height: 60, borderRadius: 6, backgroundColor: "#333" },
-  npTitle: { color: "#fff", fontWeight: "700", fontSize: 18, },
+  npTitle: { color: "#fff", fontWeight: "700", fontSize: 18 },
   npSubtitle: { color: "#c6c6c6", fontSize: 13, marginTop: 2 },
   npBtn: {
     width: 30,

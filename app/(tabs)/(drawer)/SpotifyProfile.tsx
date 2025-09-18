@@ -1,5 +1,5 @@
-// app/(drawer)/SpotifyProfile.tsx
-import { AntDesign, Ionicons } from "@expo/vector-icons";
+// app/(tabs)/(drawer)/SpotifyProfile.tsx
+import { Ionicons } from "@expo/vector-icons";
 import { DrawerActions } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useNavigation } from "expo-router";
@@ -8,11 +8,12 @@ import {
   FlatList,
   Image,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+// ✅ use the package SafeAreaView
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type Stat = { label: string; value: number | string };
 type PubPlaylist = { id: string; title: string; likes: number; cover: string };
@@ -51,17 +52,18 @@ export default function SpotifyProfile() {
   const navigation = useNavigation();
   const openDrawer = () => navigation.dispatch(DrawerActions.openDrawer());
 
+  // 🔁 match the updated route name
   const openPlaylist = (p: PubPlaylist) =>
-    router.push({ 
+    router.push({
       pathname: "/(tabs)/(drawer)/SpotifyPlayListDetails",
-      params: { id: p.id, title: "title" in p ? p.title : "Playlist" },
+      params: { id: p.id, title: p.title },
     });
 
   return (
     <SafeAreaView style={styles.safe}>
       {/* top gradient header */}
       <LinearGradient
-        colors={["#252525ff", "rgba(14, 14, 14, 1)"]}
+        colors={["rgba(14, 14, 14, 1)", "#252525ff"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -70,7 +72,7 @@ export default function SpotifyProfile() {
       {/* Header bar: drawer on left, kebab on right */}
       <View style={styles.topBar}>
         <Pressable onPress={openDrawer} style={styles.iconBtn}>
-          <AntDesign name="menuunfold" size={30} color="#fff" />
+          <Ionicons name="menu" size={30} color="#fff" />
         </Pressable>
         <Pressable onPress={() => {}} style={styles.iconBtn}>
           <Ionicons name="ellipsis-horizontal" size={30} color="#fff" />

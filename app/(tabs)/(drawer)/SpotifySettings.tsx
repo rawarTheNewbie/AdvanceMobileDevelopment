@@ -1,18 +1,18 @@
-// app/(drawer)/SpotifySettings.tsx
-import { AntDesign } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { DrawerActions } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useNavigation } from "expo-router";
 import { useState } from "react";
 import {
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+// ✅ use the package SafeAreaView
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SpotifySettings() {
   const navigation = useNavigation();
@@ -20,8 +20,8 @@ export default function SpotifySettings() {
   const [darkMode, setDarkMode] = useState(true);
 
   const handleLogout = () => {
-    // TODO: clear auth/session if needed
-    router.replace("/SpotifyLogin");
+    // ✅ stay inside tabs so the bar doesn't disappear
+    router.replace("/(tabs)/SpotifyLogin");
   };
 
   const openDrawer = () => navigation.dispatch(DrawerActions.openDrawer());
@@ -29,7 +29,7 @@ export default function SpotifySettings() {
   return (
     <SafeAreaView style={styles.safe}>
       <LinearGradient
-        colors={["#252525ff", "rgba(14, 14, 14, 1)"]}
+        colors={["rgba(14, 14, 14, 1)", "#252525ff"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -38,8 +38,8 @@ export default function SpotifySettings() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={openDrawer} style={styles.menuBtn}>
-          <AntDesign name="menuunfold" size={30} color="#fff" />
-        </Pressable>
+          <Ionicons name="menu" size={30} color="#fff" />
+        </Pressable>        
         <Text style={styles.headerTitle}>Settings</Text>
         <View style={{ width: 32 }} /> 
         {/* placeholder to keep title centered */}
@@ -51,7 +51,7 @@ export default function SpotifySettings() {
         <View style={styles.row}>
           <View style={styles.rowLeft}>
             <View style={styles.rowIcon}>
-              <AntDesign name="bells" size={20} color="#fff" />
+              <Ionicons name="notifications-outline" size={20} color="#fff" />
             </View>
             <Text style={styles.rowLabel}>Notifications</Text>
           </View>
@@ -67,7 +67,7 @@ export default function SpotifySettings() {
         <View style={styles.row}>
           <View style={styles.rowLeft}>
             <View style={styles.rowIcon}>
-              <AntDesign name="bulb1" size={20} color="#fff" />
+              <Ionicons name="bulb-outline" size={20} color="#fff" />
             </View>
             <Text style={styles.rowLabel}>Dark Mode</Text>
           </View>

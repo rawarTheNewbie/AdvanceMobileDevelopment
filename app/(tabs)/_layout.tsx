@@ -18,10 +18,11 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: { position: "absolute" },
-          default: {},
-        }),
+        tabBarStyle: {
+          ...(Platform.OS === "ios" ? { position: "absolute" } : {}),
+          backgroundColor: "#1f1f1fff", // 🔥 black background
+          borderTopColor: "transparent", // remove top border
+        },
       }}
     >
       {/* Visible tabs */}
@@ -45,8 +46,9 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen name="home" options={{ href: null }} />
-        <Tabs.Screen name="SpotifyLogin" 
-          options={{
+      <Tabs.Screen
+        name="SpotifyLogin"
+        options={{
           title: "SpotifyLogin",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={color} />
@@ -54,15 +56,15 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen name="ComponentShowcase"
-          options={{
+      <Tabs.Screen
+        name="ComponentShowcase"
+        options={{
           title: "Showcase",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={color} />
           ),
         }}
       />
-
 
       {/* Hide internal routes so they don't show as tabs */}
       <Tabs.Screen name="(drawer)" options={{ href: null }} />
