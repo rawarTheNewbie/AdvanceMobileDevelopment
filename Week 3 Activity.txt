@@ -2,4 +2,4 @@
 2. Added a Spotify Playlist Details when the user tap the selected playlist.
 3. Added a Spotify Profile where it shows the user selected playlist and user settings.
 4. Added a Spotify Settigns which allows the user to On/Off Notications, and switches the background, buttons and colors to dark.
-5. Added a screen gesture, when the user swipe to the left the drawer tab will slide.
+5. Added a screen gesture, when the user swipe to the right the drawer tab will slide.
