@@ -1,9 +1,9 @@
-// app/(tabs)/(drawer)/SpotifyProfile.tsx
 import { Ionicons } from "@expo/vector-icons";
-import { DrawerActions } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { DrawerActions, useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useNavigation } from "expo-router";
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
   FlatList,
   Image,
@@ -12,14 +12,14 @@ import {
   Text,
   View,
 } from "react-native";
-// ✅ use the package SafeAreaView
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type Stat = { label: string; value: number | string };
 type PubPlaylist = { id: string; title: string; likes: number; cover: string };
+type ProfileData = { username: string; email: string; genre: string; avatar?: string };
 
-const AVATAR =
-  "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?q=80&w=800&auto=format&fit=crop";
+const PROFILE_PERSIST_KEY = "@profile_persist:v1";
+const AVATAR_FALLBACK = require("../../../assets/images/userProfile.jpg");
 
 const STATS: Stat[] = [
   { label: "PLAYLISTS", value: 10 },
@@ -28,48 +28,71 @@ const STATS: Stat[] = [
 ];
 
 const PUBLIC_PLAYLISTS: PubPlaylist[] = [
-  {
-    id: "p1",
-    title: "OPM SONG",
-    likes: 0,
-    cover: "https://picsum.photos/seed/aa/64/64",
-  },
-  {
-    id: "p2",
-    title: "Broke asf",
-    likes: 0,
-    cover: "https://picsum.photos/seed/bb/64/64",
-  },
-  {
-    id: "p3",
-    title: "Living young and Wild",
-    likes: 1,
-    cover: "https://picsum.photos/seed/cc/64/64",
-  },
+  { id: "p1", title: "OPM SONG", likes: 0, cover: "https://picsum.photos/seed/aa/64/64" },
+  { id: "p2", title: "Broke asf", likes: 0, cover: "https://picsum.photos/seed/bb/64/64" },
+  { id: "p3", title: "Living young and Wild", likes: 1, cover: "https://picsum.photos/seed/cc/64/64" },
 ];
 
 export default function SpotifyProfile() {
   const navigation = useNavigation();
   const openDrawer = () => navigation.dispatch(DrawerActions.openDrawer());
 
-  // 🔁 match the updated route name
+  const [profile, setProfile] = useState<ProfileData>({
+    username: "",
+    email: "",
+    genre: "",
+    avatar: undefined,
+  });
+
+  // Load profile whenever this screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      (async () => {
+        try {
+          const raw = await AsyncStorage.getItem(PROFILE_PERSIST_KEY);
+          if (raw && isActive) {
+            const data = JSON.parse(raw) as ProfileData;
+            setProfile({
+              username: data.username ?? "",
+              email: data.email ?? "",
+              genre: data.genre ?? "",
+              avatar: data.avatar,
+            });
+          }
+        } catch {
+          // ignore read errors
+        }
+      })();
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
+
   const openPlaylist = (p: PubPlaylist) =>
     router.push({
       pathname: "/(tabs)/(drawer)/SpotifyPlayListDetails",
       params: { id: p.id, title: p.title },
     });
 
+  const displayName = profile.username || "Mike";
+  const genrePlaceholder = profile.genre
+    ? { uri: `https://via.placeholder.com/96?text=${encodeURIComponent(profile.genre)}` }
+    : AVATAR_FALLBACK;
+
+  const avatarSource = profile.avatar ? { uri: profile.avatar } : genrePlaceholder;
+
   return (
     <SafeAreaView style={styles.safe}>
-      {/* top gradient header */}
       <LinearGradient
         colors={["rgba(14, 14, 14, 1)", "#252525ff"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={styles.gradientFill}
       />
 
-      {/* Header bar: drawer on left, kebab on right */}
+      {/* Header bar */}
       <View style={styles.topBar}>
         <Pressable onPress={openDrawer} style={styles.iconBtn}>
           <Ionicons name="menu" size={30} color="#fff" />
@@ -83,21 +106,23 @@ export default function SpotifyProfile() {
         data={PUBLIC_PLAYLISTS}
         keyExtractor={(i) => i.id}
         ListHeaderComponent={
-          <>
+          <View>
             {/* avatar */}
-          <View style={styles.avatarWrap}>
-            <Image
-              // from app/(drawer)/SpotifyProfile.tsx -> ../../assets/images/...
-              source={require("../../../assets/images/userProfile.jpg")}
-              style={styles.avatar}
-            />
-          </View>
+            <View style={styles.avatarWrap}>
+              <Image source={avatarSource} style={styles.avatar} />
+            </View>
 
-            {/* name */}
-            <Text style={styles.name}>Mike</Text>
+            {/* name + email */}
+            <Text style={styles.name}>{displayName}</Text>
+            {profile.email ? (
+              <Text style={[styles.rowSub, styles.centerSub]}>{profile.email}</Text>
+            ) : null}
 
             {/* edit profile pill */}
-            <Pressable style={styles.editBtn} onPress={() => {}}>
+            <Pressable
+              style={styles.editBtn}
+              onPress={() => router.push("/(tabs)/(drawer)/SpotifyProfileForm")}
+            >
               <Text style={styles.editText}>EDIT PROFILE</Text>
             </Pressable>
 
@@ -113,7 +138,7 @@ export default function SpotifyProfile() {
 
             {/* section header */}
             <Text style={styles.sectionTitle}>Public playlists</Text>
-          </>
+          </View>
         }
         renderItem={({ item }) => (
           <Pressable style={styles.row} onPress={() => openPlaylist(item)}>
@@ -130,13 +155,13 @@ export default function SpotifyProfile() {
           </Pressable>
         )}
         ListFooterComponent={
-          <Pressable style={[styles.row, { marginTop: 6 }]} onPress={() => {}}>
-            <Text style={[styles.rowTitle, { flex: 1 }]}>See all playlists</Text>
+          <Pressable style={[styles.row, styles.footerRow]} onPress={() => {}}>
+            <Text style={[styles.rowTitle, styles.flex1]}>See all playlists</Text>
             <Ionicons name="chevron-forward" size={18} color="#c9c9c9" />
           </Pressable>
         }
-        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
@@ -147,22 +172,21 @@ const AVATAR_SIZE = 96;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#121212" },
+  gradientFill: StyleSheet.absoluteFillObject as any,
 
   topBar: {
     height: 44,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between", // <-- fix the typo here
+    justifyContent: "space-between",
   },
   iconBtn: {
-    width:  40,
+    width: 40,
     height: 45,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
-    letterSpacing: 0.5,
-    paddingTop: 20,
   },
 
   avatarWrap: {
@@ -184,6 +208,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 10,
   },
+  centerSub: { textAlign: "center", marginTop: 4 },
 
   editBtn: {
     alignSelf: "center",
@@ -231,8 +256,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: "transparent",
   },
+  footerRow: { marginTop: 6 },
+  flex1: { flex: 1 },
   rowCover: { width: 46, height: 46, borderRadius: 6, backgroundColor: "#272727" },
   rowTextWrap: { flex: 1, marginLeft: 12, marginRight: 8 },
   rowTitle: { color: "#fff", fontWeight: "700" },
   rowSub: { color: "#9c9c9c", fontSize: 12, marginTop: 2 },
+
+  separator: { height: 8 },
+  listContent: { paddingBottom: 32 },
 });

@@ -1,0 +1,7 @@
+1. Added a Spotify playlist, which allows the user to add, remove, and undo/redo a music.
+1.1. Added an animations at the Spotify Playlist using react-native-reanimated
+
+2. Added a Spotify Profile Form which basically allows the user to change his username, email, genre and lastly the profile image.
+2.1. Added an animations using react-native-reanimated(Shaking, fade-in)
+
+Overall, the changes I made was based on the given week 4 activities.
