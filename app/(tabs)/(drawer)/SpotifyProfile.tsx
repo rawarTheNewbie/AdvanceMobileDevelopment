@@ -1,8 +1,8 @@
+// app/(tabs)/(drawer)/SpotifyProfile.tsx
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DrawerActions, useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
-import { router, useNavigation } from "expo-router";
+import { DrawerActions, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   FlatList,
@@ -13,6 +13,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// Theme (Redux)
+import { useSelector } from "react-redux";
+import { RootState } from "../../../src/store";
+import AnimatedThemeView from "../../../src/theme/AnimatedThemeView";
 
 type Stat = { label: string; value: number | string };
 type PubPlaylist = { id: string; title: string; likes: number; cover: string };
@@ -35,6 +40,8 @@ const PUBLIC_PLAYLISTS: PubPlaylist[] = [
 
 export default function SpotifyProfile() {
   const navigation = useNavigation();
+  const { colors } = useSelector((s: RootState) => s.theme);
+
   const openDrawer = () => navigation.dispatch(DrawerActions.openDrawer());
 
   const [profile, setProfile] = useState<ProfileData>({
@@ -84,96 +91,116 @@ export default function SpotifyProfile() {
   const avatarSource = profile.avatar ? { uri: profile.avatar } : genrePlaceholder;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <LinearGradient
-        colors={["rgba(14, 14, 14, 1)", "#252525ff"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.gradientFill}
-      />
+    <AnimatedThemeView>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* Header bar */}
+        <View style={styles.topBar}>
+          <Pressable onPress={openDrawer} style={styles.iconBtn}>
+            <Ionicons name="menu" size={30} color={colors.text} />
+          </Pressable>
+          <Pressable onPress={() => {}} style={styles.iconBtn}>
+            <Ionicons name="ellipsis-horizontal" size={30} color={colors.text} />
+          </Pressable>
+        </View>
 
-      {/* Header bar */}
-      <View style={styles.topBar}>
-        <Pressable onPress={openDrawer} style={styles.iconBtn}>
-          <Ionicons name="menu" size={30} color="#fff" />
-        </Pressable>
-        <Pressable onPress={() => {}} style={styles.iconBtn}>
-          <Ionicons name="ellipsis-horizontal" size={30} color="#fff" />
-        </Pressable>
-      </View>
+        <FlatList
+          data={PUBLIC_PLAYLISTS}
+          keyExtractor={(i) => i.id}
+          ListHeaderComponent={
+            <View>
+              {/* avatar */}
+              <View style={styles.avatarWrap}>
+                <Image
+                  source={avatarSource}
+                  style={[
+                    styles.avatar,
+                    { borderColor: `${colors.text}33` }, // subtle ring from theme
+                  ]}
+                />
+              </View>
 
-      <FlatList
-        data={PUBLIC_PLAYLISTS}
-        keyExtractor={(i) => i.id}
-        ListHeaderComponent={
-          <View>
-            {/* avatar */}
-            <View style={styles.avatarWrap}>
-              <Image source={avatarSource} style={styles.avatar} />
+              {/* name + email */}
+              <Text style={[styles.name, { color: colors.text }]}>{displayName}</Text>
+              {profile.email ? (
+                <Text style={[styles.rowSub, styles.centerSub, { color: colors.muted }]}>
+                  {profile.email}
+                </Text>
+              ) : null}
+
+              {/* edit profile pill */}
+              <Pressable
+                style={[
+                  styles.editBtn,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: "#00000022",
+                    borderWidth: StyleSheet.hairlineWidth,
+                  },
+                ]}
+                onPress={() => router.push("/(tabs)/(drawer)/SpotifyProfileForm")}
+              >
+                <Text style={[styles.editText, { color: colors.text }]}>EDIT PROFILE</Text>
+              </Pressable>
+
+              {/* stats row */}
+              <View style={styles.statsRow}>
+                {STATS.map((s) => (
+                  <View key={s.label} style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: colors.text }]}>{s.value}</Text>
+                    <Text style={[styles.statLabel, { color: colors.muted }]}>{s.label}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* section header */}
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Public playlists
+              </Text>
             </View>
-
-            {/* name + email */}
-            <Text style={styles.name}>{displayName}</Text>
-            {profile.email ? (
-              <Text style={[styles.rowSub, styles.centerSub]}>{profile.email}</Text>
-            ) : null}
-
-            {/* edit profile pill */}
+          }
+          renderItem={({ item }) => (
             <Pressable
-              style={styles.editBtn}
-              onPress={() => router.push("/(tabs)/(drawer)/SpotifyProfileForm")}
+              style={styles.row}
+              onPress={() => openPlaylist(item)}
             >
-              <Text style={styles.editText}>EDIT PROFILE</Text>
+              <Image
+                source={{ uri: item.cover }}
+                style={[styles.rowCover, { backgroundColor: `${colors.text}11` }]}
+              />
+              <View style={styles.rowTextWrap}>
+                <Text numberOfLines={1} style={[styles.rowTitle, { color: colors.text }]}>
+                  {item.title}
+                </Text>
+                <Text style={[styles.rowSub, { color: colors.muted }]} numberOfLines={1}>
+                  {item.likes} {item.likes === 1 ? "like" : "likes"}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
-
-            {/* stats row */}
-            <View style={styles.statsRow}>
-              {STATS.map((s) => (
-                <View key={s.label} style={styles.statItem}>
-                  <Text style={styles.statValue}>{s.value}</Text>
-                  <Text style={styles.statLabel}>{s.label}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* section header */}
-            <Text style={styles.sectionTitle}>Public playlists</Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <Pressable style={styles.row} onPress={() => openPlaylist(item)}>
-            <Image source={{ uri: item.cover }} style={styles.rowCover} />
-            <View style={styles.rowTextWrap}>
-              <Text numberOfLines={1} style={styles.rowTitle}>
-                {item.title}
+          )}
+          ListFooterComponent={
+            <Pressable
+              style={[styles.row, styles.footerRow]}
+              onPress={() => {}}
+            >
+              <Text style={[styles.rowTitle, styles.flex1, { color: colors.accent }]}>
+                See all playlists
               </Text>
-              <Text style={styles.rowSub} numberOfLines={1}>
-                {item.likes} {item.likes === 1 ? "like" : "likes"}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#c9c9c9" />
-          </Pressable>
-        )}
-        ListFooterComponent={
-          <Pressable style={[styles.row, styles.footerRow]} onPress={() => {}}>
-            <Text style={[styles.rowTitle, styles.flex1]}>See all playlists</Text>
-            <Ionicons name="chevron-forward" size={18} color="#c9c9c9" />
-          </Pressable>
-        }
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+              <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+            </Pressable>
+          }
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          contentContainerStyle={[styles.listContent, { backgroundColor: "transparent" }]}
+          showsVerticalScrollIndicator={false}
+        />
+      </SafeAreaView>
+    </AnimatedThemeView>
   );
 }
 
 const AVATAR_SIZE = 96;
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#121212" },
-  gradientFill: StyleSheet.absoluteFillObject as any,
-
   topBar: {
     height: 44,
     paddingHorizontal: 12,
@@ -198,11 +225,9 @@ const styles = StyleSheet.create({
     height: AVATAR_SIZE,
     borderRadius: AVATAR_SIZE / 2,
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.2)",
   },
 
   name: {
-    color: "#fff",
     fontSize: 22,
     fontWeight: "800",
     textAlign: "center",
@@ -213,13 +238,11 @@ const styles = StyleSheet.create({
   editBtn: {
     alignSelf: "center",
     marginTop: 8,
-    backgroundColor: "#2a2a2a",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
   },
   editText: {
-    color: "#e6e6e6",
     fontWeight: "700",
     fontSize: 12,
     letterSpacing: 0.4,
@@ -232,16 +255,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   statItem: { alignItems: "center" },
-  statValue: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  statValue: { fontWeight: "800", fontSize: 14 },
   statLabel: {
-    color: "#bcbcbc",
     fontSize: 11,
     letterSpacing: 0.7,
     marginTop: 2,
   },
 
   sectionTitle: {
-    color: "#fff",
     fontWeight: "800",
     fontSize: 16,
     paddingHorizontal: 16,
@@ -258,10 +279,10 @@ const styles = StyleSheet.create({
   },
   footerRow: { marginTop: 6 },
   flex1: { flex: 1 },
-  rowCover: { width: 46, height: 46, borderRadius: 6, backgroundColor: "#272727" },
+  rowCover: { width: 46, height: 46, borderRadius: 6 },
   rowTextWrap: { flex: 1, marginLeft: 12, marginRight: 8 },
-  rowTitle: { color: "#fff", fontWeight: "700" },
-  rowSub: { color: "#9c9c9c", fontSize: 12, marginTop: 2 },
+  rowTitle: { fontWeight: "700" },
+  rowSub: { fontSize: 12, marginTop: 2 },
 
   separator: { height: 8 },
   listContent: { paddingBottom: 32 },

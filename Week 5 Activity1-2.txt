@@ -1,0 +1,8 @@
+Activity 1:
+    1. Set up a light/dark mode using Redux Toolkit.
+    2. Added animted transitions.
+    3. Added a custom colors.
+    4. Save theme settings with asyncStorage.
+
+Activity 2:
+    1. Set up a camera, added into the tabs list with named CameraScreen.

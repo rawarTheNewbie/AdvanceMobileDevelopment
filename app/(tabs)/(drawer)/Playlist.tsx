@@ -1,7 +1,7 @@
+// app/(tabs)/(drawer)/Playlist.tsx
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DrawerActions } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
@@ -23,6 +23,11 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+
+// ✅ Theme background only
+import { useSelector } from "react-redux";
+import { RootState } from "../../../src/store";
+import AnimatedThemeView from "../../../src/theme/AnimatedThemeView";
 
 // ------------ Types ------------
 type Song = { id: string; title: string };
@@ -108,7 +113,7 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-// ------------ Colors ------------
+// ------------ Colors (unchanged UI colors) ------------
 const colors = {
   card: "rgba(255,255,255,0.06)",
   cardBorder: "rgba(255,255,255,0.08)",
@@ -182,6 +187,9 @@ function BarButton({
 
 // ------------ Screen ------------
 export default function PlaylistScreen() {
+  // ✅ Only used to theme the background
+  const { colors: themeColors } = useSelector((s: RootState) => s.theme);
+
   const [text, setText] = useState("");
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -305,58 +313,51 @@ export default function PlaylistScreen() {
   );
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      {/* Gradient background */}
-      <LinearGradient
-        colors={["rgba(14, 14, 14, 1)", "#252525ff"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
-      />
+    // ✅ Use AnimatedThemeView to provide the themed background only
+    <AnimatedThemeView style={{ flex: 1, backgroundColor: themeColors.background }}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        {/* Top bar with drawer button (unchanged) */}
+        <View style={styles.topBar}>
+          <Pressable onPress={openDrawer} style={styles.menuBtn}>
+            <Ionicons name="menu" size={30} color="#fff" />
+          </Pressable>
+        </View>
 
-      {/* NEW: Top bar with drawer button */}
-      <View style={styles.topBar}>
-        <Pressable onPress={openDrawer} style={styles.menuBtn}>
-          <Ionicons name="menu" size={30} color="#fff" />
-        </Pressable>
-      </View>
+        <View style={styles.container}>
+          {Header}
 
-      <View style={styles.container}>
-        {Header}
+          <FlatList
+            data={state.present}
+            keyExtractor={(s) => s.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyTitle}>Your playlist is empty</Text>
+                <Text style={styles.emptySub}>Add a few songs to get started.</Text>
+              </View>
+            }
+          />
 
-        <FlatList
-          data={state.present}
-          keyExtractor={(s) => s.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>Your playlist is empty</Text>
-              <Text style={styles.emptySub}>
-                Add a few songs to get started.
-              </Text>
+          {/* History */}
+          {state.history.length > 0 && (
+            <View style={styles.historyCard}>
+              <Text style={styles.historyTitle}>Recent</Text>
+              {state.history.slice(0, 4).map((h, i) => (
+                <Text key={`${h}-${i}`} style={styles.historyText}>
+                  • {h}
+                </Text>
+              ))}
             </View>
-          }
-        />
+          )}
 
-        {/* History */}
-        {state.history.length > 0 && (
-          <View style={styles.historyCard}>
-            <Text style={styles.historyTitle}>Recent</Text>
-            {state.history.slice(0, 4).map((h, i) => (
-              <Text key={`${h}-${i}`} style={styles.historyText}>
-                • {h}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        <Fab disabled={!text.trim()} onPress={addSong} />
-      </View>
-    </KeyboardAvoidingView>
+          <Fab disabled={!text.trim()} onPress={addSong} />
+        </View>
+      </KeyboardAvoidingView>
+    </AnimatedThemeView>
   );
 }
 

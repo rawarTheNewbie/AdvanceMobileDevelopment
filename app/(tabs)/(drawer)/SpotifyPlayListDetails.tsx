@@ -1,17 +1,20 @@
 // app/(tabs)/(drawer)/PlaylistDetail.tsx
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import {
   FlatList,
   Image,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+
+// Redux theme
+import { useSelector } from "react-redux";
+import { RootState } from "../../../src/store";
+import AnimatedThemeView from "../../../src/theme/AnimatedThemeView";
 
 type CoverSrc = string | number;
 type Track = { id: string; title: string; artists: string; duration: string };
@@ -25,60 +28,54 @@ const MOCK_TRACKS: Track[] = [
   { id: "t6", title: "Astral", artists: "The 1975", duration: "3:59" },
 ];
 
+const COVER_SIZE = 200;
+
 export default function PlaylistDetail() {
+  const { colors } = useSelector((s: RootState) => s.theme);
+
   const params = useLocalSearchParams<{
     id?: string;
     title?: string;
     cover?: string;
   }>();
 
-  // You can pass a cover via params later; for now, we try params.cover then fallback
   const cover: CoverSrc = useMemo<CoverSrc>(() => {
     if (params.cover) return params.cover as string;
-    // fallback image (remote) — swap with a local require if you prefer:
     return "https://images.unsplash.com/photo-1507878866276-a947ef722fee?q=80&w=1600&auto=format&fit=crop";
-    // or: return require("@/assets/images/yourFallbackCover.jpg");
   }, [params.cover]);
 
   const title = params.title ?? "Playlist";
 
   const renderTrack = ({ item, index }: { item: Track; index: number }) => (
     <Pressable style={styles.trackRow}>
-      <Text style={styles.trackIndex}>{index + 1}</Text>
+      <Text style={[styles.trackIndex, { color: colors.muted }]}>{index + 1}</Text>
       <View style={styles.trackCenter}>
-        <Text numberOfLines={1} style={styles.trackTitle}>
+        <Text numberOfLines={1} style={[styles.trackTitle, { color: colors.text }]}>
           {item.title}
         </Text>
-        <Text numberOfLines={1} style={styles.trackArtists}>
+        <Text numberOfLines={1} style={[styles.trackArtists, { color: colors.muted }]}>
           {item.artists}
         </Text>
       </View>
-      <Text style={styles.trackDuration}>{item.duration}</Text>
+      <Text style={[styles.trackDuration, { color: colors.muted }]}>{item.duration}</Text>
       <MaterialCommunityIcons
         name="dots-horizontal"
         size={20}
-        color="#bdbdbd"
+        color={colors.muted}
         style={{ marginLeft: 8 }}
       />
     </Pressable>
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <LinearGradient
-        colors={["#2a2a2a", "#121212"]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
-      />
-
+    <AnimatedThemeView style={{ flex: 1 }}>
       {/* Top bar */}
       <View style={styles.topBar}>
         <Pressable onPress={() => router.back()} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={30} color="#fff" />
-        </Pressable>          
+          <Ionicons name="arrow-back" size={30} color={colors.text} />
+        </Pressable>
         <Pressable onPress={() => {}} style={styles.iconBtn}>
-          <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
+          <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
         </Pressable>
       </View>
 
@@ -86,21 +83,21 @@ export default function PlaylistDetail() {
       <View style={styles.header}>
         <Image
           source={typeof cover === "string" ? { uri: cover } : cover}
-          style={styles.cover}
+          style={[styles.cover, { backgroundColor: colors.card }]}
         />
-        <Text numberOfLines={2} style={styles.title}>
+        <Text numberOfLines={2} style={[styles.title, { color: colors.text }]}>
           {title}
         </Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
+        <Text style={[styles.subtitle, { color: colors.muted }]} numberOfLines={1}>
           Playlist • Made for you
         </Text>
 
         <View style={styles.actionRow}>
-          <Pressable style={[styles.actionBtn, styles.playBtn]}>
-            <Ionicons name="play" size={20} color="#000" />
-            <Text style={styles.playText}>Play</Text>
+          <Pressable style={[styles.actionBtn, { backgroundColor: colors.text }]}>
+            <Ionicons name="play" size={20} color={colors.background} />
+            <Text style={[styles.playText, { color: colors.background }]}>Play</Text>
           </Pressable>
-          <Pressable style={[styles.actionBtn, styles.shuffleBtn]}>
+            <Pressable style={[styles.actionBtn, styles.shuffleBtn]}>
             <Ionicons name="shuffle" size={18} color="#1ed760" />
             <Text style={styles.shuffleText}>Shuffle</Text>
           </Pressable>
@@ -115,17 +112,15 @@ export default function PlaylistDetail() {
         ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
         contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 14 }}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={<Text style={styles.sectionLabel}>Songs</Text>}
+        ListHeaderComponent={
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>Songs</Text>
+        }
       />
-    </SafeAreaView>
+    </AnimatedThemeView>
   );
 }
 
-const COVER_SIZE = 200;
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#121212" },
-
   topBar: {
     paddingTop: 70,
     height: 44,
@@ -152,17 +147,14 @@ const styles = StyleSheet.create({
     width: COVER_SIZE,
     height: COVER_SIZE,
     borderRadius: 12,
-    backgroundColor: "#222",
   },
   title: {
-    color: "#fff",
     fontSize: 24,
     fontWeight: "800",
     textAlign: "center",
     marginTop: 12,
   },
   subtitle: {
-    color: "#c2c2c2",
     fontSize: 12,
     marginTop: 4,
   },
@@ -180,25 +172,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 999,
   },
-  playBtn: {
-    backgroundColor: "#fff",
-  },
-  playText: {
-    color: "#000",
-    fontWeight: "800",
-  },
-  shuffleBtn: {
-    backgroundColor: "rgba(30, 215, 96, 0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(30, 215, 96, 0.5)",
-  },
-  shuffleText: {
-    color: "#1ed760",
-    fontWeight: "800",
-  },
+  playText: { fontWeight: "800" },
+  shuffleText: { fontWeight: "800" },
 
   sectionLabel: {
-    color: "#fff",
     fontSize: 14,
     fontWeight: "800",
     paddingHorizontal: 2,
@@ -210,15 +187,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 10,
     paddingHorizontal: 6,
-    backgroundColor: "transparent",
   },
-  trackIndex: {
-    width: 24,
-    color: "#a9a9a9",
-    textAlign: "center",
+
+  shuffleBtn: {
+    backgroundColor: "rgba(30, 215, 96, 0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(30, 215, 96, 0.5)",
   },
+  
+  shuffleText: {
+    color: "#1ed760",
+    fontWeight: "800",
+  },
+  trackIndex: { width: 24, textAlign: "center" },
   trackCenter: { flex: 1, marginLeft: 6, marginRight: 8 },
-  trackTitle: { color: "#fff", fontWeight: "700" },
-  trackArtists: { color: "#9c9c9c", fontSize: 12, marginTop: 2 },
-  trackDuration: { color: "#a9a9a9", fontSize: 12 },
+  trackTitle: { fontWeight: "700" },
+  trackArtists: { fontSize: 12, marginTop: 2 },
+  trackDuration: { fontSize: 12 },
 });
